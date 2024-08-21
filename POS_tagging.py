@@ -1,59 +1,72 @@
-from nltk.corpus import treebank
+from nltk.corpus import brown
 import numpy as np
+from numba import njit
 from viterbi import viterbi_log
 
-def make_prob_matrices(tagged_sentences,words,pos_tags):
-    """ Contructs probability matrices.        
-    
-    Args:
-        tagged_sentences (List[List[Tuple(str,str)],...] List of sentences, each of which is POS tagged as [(<WORD>, <TAG>),...]
-        words (List[str]): List of all unique words. The index in this list will be later used for learning.
-        pos_tags (List[str]): List of all unique POS tags occuring in corpus. Likewise, index will be used for learning
+def to_numpy(XY:list[list[tuple[str,str]]], X_name:list, Y_name:list, to_sort=False):
+    X_id_map = {v: i for i, v in enumerate(X_name)}
+    Y_id_map = {v: i for i, v in enumerate(Y_name)}
+    if to_sort: XY = sorted(XY,key=len)
+        
+    n = len(XY)
+    m = max(len(s) for s in XY)
+    ST = np.zeros((n, m, 2), dtype=np.int32)-1
 
-    Returns:
-        A:  Transition probability matrix where A[i,j] := P(pos_tags[j] | pos_tag[i]), shape(# tags,# tags)
-        B:  Probability matrix where B[i,j] := P(words[j] | pos_tags[i]), shape(# words,# tags)
-        Pi: Initial tag probability where Pi[i] := P(words[i] | ^), shape(# tags)
-    """
-    A = np.zeros((len(pos_tags),len(pos_tags)),dtype=np.float64)
-    B = np.zeros((len(pos_tags),len(words)),dtype=np.float64)
-    Pi = np.zeros(len(pos_tags),dtype=np.float64)
-    for sentence in tagged_sentences:
-        Pi[pos_tags.index(sentence[0][1])] += 1
-        for n in range(len(sentence)-1):
-            nth, nnth = sentence[n:n+2]
-            A[pos_tags.index(nth[1]),pos_tags.index(nnth[1])] += 1
-            B[pos_tags.index(nth[1]), words.index(nth[0])] += 1
-        B[pos_tags.index(sentence[-1][1]), words.index(sentence[-1][0])] += 1
-    A /= np.sum(A,axis=1).reshape(-1,1)
-    B /= np.sum(B,axis=1).reshape(-1,1)
-    Pi /= np.sum(Pi)
+    for i, s in enumerate(XY):
+        for j, w in enumerate(s):
+            ST[i, j] = np.array([X_id_map[w[0]], Y_id_map[w[1]]])
+
+    return ST
+
+@njit
+def get_prob(stB:np.ndarray, no_words:int, no_tags:int, eps:float=0.00001):
+    A = np.zeros((no_tags,no_tags), dtype=np.float64)
+    B = np.zeros((no_tags,no_words), dtype=np.float64)
+    Pi = np.zeros(no_tags, dtype=np.float64)
+
+    m, n, _ = stB.shape
+    
+    for i in range(m):
+        if stB[i,0,0] == -1 : break
+        Pi[stB[i,0,1]] += 1
+        for j in range(n-1):
+            wnth = stB[i,j,0]
+            nth, nnth = stB[i,j:j+2,1]
+            B[nth, wnth] += 1
+            if nnth == -1 : break
+            A[nth,nnth] += 1
+        if nnth != -1 : B[stB[i,n-1,1], stB[i,n-1,0]] += 1
+    A /= np.sum(A,axis=1).reshape(-1,1) + eps
+    B /= np.sum(B,axis=1).reshape(-1,1) + eps
+    Pi /= np.sum(Pi) + eps
     return A, B, Pi
 
-
 if __name__ == '__main__':
-    words = list(set(treebank.words())) # unique list of words
-    pos_tags = list(set(pair[1] for pair in treebank.tagged_words())) # extract all unique tags from corpus
+    words = list(set(brown.words()))
+    pos_tags = ['PRON', 'VERB', 'CONJ', '.', 'X', 'DET', 'NUM', 'ADJ', 'ADV', 'ADP', 'PRT', 'NOUN'] 
+    # pos_tags = list(set(pair[1] for pair in brown.tagged_words(tagset='universal')))
+    tagged_sents = list(brown.tagged_sents(tagset='universal'))
     
-    A, B, Pi = make_prob_matrices(treebank.tagged_sents(), words, pos_tags)
+    ST = to_numpy(tagged_sents, words, pos_tags)
+    A, B, Pi = get_prob(ST, len(words), len(pos_tags))
 
-    r = 303              # sample number to test
-    test_sent = treebank.sents()[r]
+    r = 1028              # sample number to test
+    test_sent = []
+    test_tags = []
+    for word, tag in tagged_sents[r]:
+        test_sent.append(word)
+        test_tags.append(tag)
     O = [words.index(word) for word in test_sent] # producing observation states (words) in terms of its word index
-    test_tagged = [tag for _, tag in treebank.tagged_sents()[r]]
-    correct_tag_seq = np.array([pos_tags.index(pair[1]) for pair in treebank.tagged_sents()[r]])
-
-    opt_state_seq, log_prob_trellis, backtrack_matrix = viterbi_log(A,Pi,B,O)
-
-
-    # The following was to check if it was working or not. These parts need to be better done.
-    print('Observation sequence:   O  = ', O)
-    print('Optimal state sequence: S  = ', opt_state_seq)
-    print('Correct state sequence: S* = ', correct_tag_seq)
-    print("Do they match : ", correct_tag_seq==opt_state_seq)
-
-    guessed_tags = [pos_tags[i] for i in opt_state_seq]
+        
+    optim_state_seq, log_prob_trellis, backtrack_matrix = viterbi_log(A,Pi,B,O)
+    
+    optim_state_seq = [pos_tags[t] for t in optim_state_seq]
+    
+    print('Observation sequence:   O  = ', test_sent)
+    print('Correct state sequence: S* = ', test_tags)
+    print('Optimal state sequence: S  = ', optim_state_seq)
+    print("Do they match ? : ", test_tags==optim_state_seq)
+    
     from pandas import DataFrame
-    test_result_df = DataFrame(index=test_sent,columns=['Correct','Guessed'],data=zip(test_tagged,guessed_tags)).T
-    print('The sentence : ', test_sent)
+    test_result_df = DataFrame(index=test_sent,columns=['Correct','Guessed'],data=zip(test_tags,optim_state_seq)).T
     print(test_result_df.iloc[:,(test_result_df.nunique()!=1).values])
