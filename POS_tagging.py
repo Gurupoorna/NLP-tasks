@@ -43,8 +43,7 @@ def get_prob(stB:np.ndarray, no_words:int, no_tags:int, eps:float=0.00001):
 
 if __name__ == '__main__':
     words = list(set(brown.words()))
-    pos_tags = ['PRON', 'VERB', 'CONJ', '.', 'X', 'DET', 'NUM', 'ADJ', 'ADV', 'ADP', 'PRT', 'NOUN'] 
-    # pos_tags = list(set(pair[1] for pair in brown.tagged_words(tagset='universal')))
+    pos_tags = ['VERB','NOUN','PRON','ADJ','ADV','ADP','CONJ','DET','NUM','PRT','X','.']
     tagged_sents = list(brown.tagged_sents(tagset='universal'))
     
     ST = to_numpy(tagged_sents, words, pos_tags)
@@ -58,7 +57,7 @@ if __name__ == '__main__':
         test_tags.append(tag)
     O = [words.index(word) for word in test_sent] # producing observation states (words) in terms of its word index
         
-    optim_state_seq, log_prob_trellis, backtrack_matrix = viterbi_log(A,Pi,B,O)
+    optim_state_seq, log_prob_trellis, backtrack_matrix = viterbi_log(O,A,Pi,B)
     
     optim_state_seq = [pos_tags[t] for t in optim_state_seq]
     

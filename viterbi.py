@@ -2,10 +2,8 @@ import numpy as np
 from numba import jit
 
 @jit(nopython=True)
-def viterbi_log(A, C, B, O):
-    """Viterbi algorithm (log variant) for solving the uncovering problem
-
-    Notebook: C5/C5S3_Viterbi.ipynb
+def viterbi_log(O, A, C, B):
+    """Viterbi algorithm (log variant) for solving the HMM decoding problem
 
     Args:
         A (np.ndarray): State transition probability matrix of dimension I x I
@@ -44,32 +42,3 @@ def viterbi_log(A, C, B, O):
         S_opt[n] = E[int(S_opt[n+1]), n]
 
     return S_opt, D_log, E
-
-''' EXAMPLE
-# Define model parameters
-A = np.array([[0.8, 0.1, 0.1], 
-              [0.2, 0.7, 0.1], 
-              [0.1, 0.3, 0.6]])
-
-C = np.array([0.6, 0.2, 0.2])
-
-B = np.array([[0.7, 0.0, 0.3], 
-              [0.1, 0.9, 0.0], 
-              [0.0, 0.2, 0.8]])
-
-O = np.array([0, 2, 0, 2, 2, 1]).astype(np.int32)
-#O = np.array([1]).astype(np.int32)
-#O = np.array([1, 2, 0, 2, 2, 1]).astype(np.int32)
-
-# Apply Viterbi algorithm (log variant)
-S_opt, D_log, E = viterbi_log(A, C, B, O)
-
-print('Observation sequence:   O = ', O)
-print('Optimal state sequence: S = ', S_opt)
-np.set_printoptions(formatter={'float': "{: 7.2f}".format})
-print('D_log =', D_log, sep='\n')
-np.set_printoptions(formatter={'float': "{: 7.4f}".format})
-print('exp(D_log) =', np.exp(D_log), sep='\n')
-np.set_printoptions(formatter={'float': "{: 7.0f}".format})
-print('E =', E, sep='\n')
-'''
