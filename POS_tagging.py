@@ -53,9 +53,9 @@ class POSTagger():
     def tag(self, toks):
         if isinstance(toks, str) :
             toks = word_tokenize(toks)
-        O = [words.index(tok) if tok in words else self._no_words for tok in toks]
+        O = [self.words.index(tok) if tok in self.words else self._no_words for tok in toks]
         optm_seq, _, _ = viterbi_log(O, self._transProb, self._iniProb, self._emissProb)
-        optm_seq = [pos_tags[t] for t in optm_seq]
+        optm_seq = [self.pos_tags[t] for t in optm_seq]
         test_tagged_sent  = list(zip(toks,optm_seq))
         return test_tagged_sent
 
@@ -248,3 +248,4 @@ if __name__ == '__main__':
     vi['Mismatch'] = np.where(vi['Predicted POS tag']!=vi['NLTK lib tagged'], '●', '')
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(vi)
+    ######################     USER INPUT ENDS    #######################
