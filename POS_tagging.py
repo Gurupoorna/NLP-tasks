@@ -1,12 +1,16 @@
 import nltk
-nltk.download('averaged_perceptron_tagger_eng', quiet=True)
+nltk.download('universal_tagset', quiet=True)
+nltk.download('averaged_perceptron_tagger', quiet=True)
 nltk.download('brown',quiet=True)
+nltk.download('punkt', quiet=True)
+
 from nltk.corpus import brown
 from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
 
 import numpy as np
 from numba import njit, prange
+from multiprocessing import Pool, Process
 
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
@@ -19,13 +23,13 @@ logging.basicConfig(level=logging.INFO,
         format='\n%(asctime)s [%(levelname)s] %(name)s - %(message)s')
 
 class POSTagger():
-    def __init__(self, tagged_sentences:list[list[tuple[str,str]]], 
-                 words=None, pos_tags=None, A=None, B=None, Pi=None):
+    def __init__(self, tagged_sentences:list[list[tuple[str,str]]]=None, 
+                 words=None, pos_tags=None, this_ST=None, A=None, B=None, Pi=None):
         self._logger = logging.getLogger('POSTagger')
         self._logger.info('Initializing Hidden Markov Model.')
         if not words:
             words = list(set([wt[0] for s in tqdm(tagged_sentences, desc='Getting all words ') for wt in s]))
-        if not pos_tags: words = list(set([wt[1] for s in tagged_sentences for wt in s]))
+        if not pos_tags: pos_tags = list(set([wt[1] for s in tagged_sentences for wt in s]))
         self._logger.info(f'Universal tagset used : {pos_tags}')
         self.words = words
         self.pos_tags = pos_tags
@@ -33,7 +37,11 @@ class POSTagger():
         self._no_tags = len(self.pos_tags)
         self._X_id_map = {v: i for i, v in enumerate(self.words)}
         self._Y_id_map = {v: i for i, v in enumerate(self.pos_tags)}
-        if not A or not B or not Pi:
+        if isinstance(this_ST,np.ndarray):
+            self._ST = this_ST
+            self._logger.info('Calculating probability matrices...')
+            self._transProb, self._emissProb, self._iniProb = self._get_prob(self.words, self.pos_tags, self._ST)
+        elif not A or not B or not Pi:
             self._to_numpy(tagged_sentences)
             self._logger.info('Calculating probability matrices...')
             self._transProb, self._emissProb, self._iniProb = self._get_prob(self.words, self.pos_tags, self._ST)
@@ -54,7 +62,7 @@ class POSTagger():
     def batch_tag(self, X_test):
         if not isinstance(X_test,np.ndarray):
             X_test = self._to_numpy(X_test, give_out=True)
-        self._logger.info('Evaluating optimal state sequence using log-viterbi algorithm...')
+        self._logger.info('Evaluating optimal state sequences using log-viterbi algorithm...')
         return self._viterbi_parll(X_test, self._transProb, self._iniProb, self._emissProb)
 
     def to_numpy(self, st):
@@ -110,65 +118,112 @@ class POSTagger():
             O = O[O>-1]
             out[i,:O.shape[0]], _, _ = viterbi_log(O, A, Pi, B)
         return out
+
+
+
+def do_kfold(t_t_indices, ST:np.ndarray):
+    # Split data into training and testing sets
+    train_index, test_index = t_t_indices#[0], t_t_indices[1]
+    train_ST = np.copy(ST[train_index])
+    test_ST =  np.copy(ST[test_index])
+    test_ST_o, test_ST_q = np.moveaxis(test_ST,-1,0)
+    # print('train_ST',train_ST)
+    # Making model
+    HMM_POSTagger_k = POSTagger(words=words, pos_tags=pos_tags, this_ST=train_ST)
+    # print('HMM constructed')
+    # Testing
+    pred = HMM_POSTagger_k.batch_tag(test_ST_o)
+    # print('batch tagged')
+    assert ((pred == -1) == (test_ST_q == -1)).all()
+    # print('before conf')
+    conf_matx = confusion_matrix(pred[pred!=-1].ravel(),test_ST_q[test_ST_q!=-1].ravel())
+    
+    # Per label accuracy which i think turns out same as precision
+    prec_s = conf_matx.sum(axis=0)
+    # print("prec_s in do_kfold :\n",prec_s)
+    prec_s[prec_s==0] = 1 # handling division by zero
+    precis = conf_matx.diagonal() / prec_s
+    
+    return precis, conf_matx
+
     
 if __name__ == '__main__':
+    print('Enter main')
     words = list(set(brown.words()))
     pos_tags = ['VERB','NOUN','PRON','ADJ','ADV','ADP','CONJ','DET','NUM','PRT','X','.']
     tagged_sents = list(brown.tagged_sents(tagset='universal'))
     
     HMM_POSTagger = POSTagger(tagged_sents, words, pos_tags)
 
-    print("Testing for some arbitrary sentence from corpus")
-    r = 1028              # sample number to test
-    test_sent = []  
-    test_tags = []
-    for word, tag in tagged_sents[r]:
-        test_sent.append(word)
-        test_tags.append(tag)
+    # print("Testing for some arbitrary sentence from corpus")
+    # r = 1028              # sample number to test
+    # test_sent = []  
+    # test_tags = []
+    # for word, tag in tagged_sents[r]:
+    #     test_sent.append(word)
+    #     test_tags.append(tag)
         
-    hmm_tagged_sent = HMM_POSTagger.tag(test_sent)
-    hmm_tags = [wt[1] for wt in hmm_tagged_sent]
-    tag_matching = np.asarray(test_tags)==np.asarray(hmm_tags)
+    # hmm_tagged_sent = HMM_POSTagger.tag(test_sent)
+    # hmm_tags = [wt[1] for wt in hmm_tagged_sent]
+    # tag_matching = np.asarray(test_tags)==np.asarray(hmm_tags)
     
-    print('Observation sequence:   O  = ', test_sent)
-    print('Correct state sequence: S* = ', test_tags)
-    print('Optimal state sequence: S  = ', hmm_tags)
-    print("Do they match ? : ", tag_matching.all())
+    # print('Observation sequence:   O  = ', test_sent)
+    # print('Correct state sequence: S* = ', test_tags)
+    # print('Optimal state sequence: S  = ', hmm_tags)
+    # print("Do they match ? : ", tag_matching.all())
     
-    import pandas as pd
-    test_result_df = pd.DataFrame(zip(test_sent, hmm_tags, test_tags, np.where(tag_matching,'','●')), columns=['Tokens','Predicted POS tag','Gold tag','Errors'])
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        print(test_result_df)
+    # import pandas as pd
+    # test_result_df = pd.DataFrame(zip(test_sent, hmm_tags, test_tags, np.where(tag_matching,'','●')), columns=['Tokens','Predicted POS tag','Gold tag','Errors'])
+    # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    #     print(test_result_df)
         
     #########################    K-FOLD    #########################
     # Define number of folds
-    kf = KFold(n_splits=5, shuffle=True, random_state=89)
+    k=2
+    kf = KFold(n_splits=k, shuffle=True, random_state=89)
     
     ST = HMM_POSTagger.get_ST()
     
-    accuracies = []
-    conf_matrices = []
+    accuracies = np.zeros((k,len(pos_tags)), dtype=np.float64)
+    conf_matrices = np.zeros((k,len(pos_tags),len(pos_tags)), dtype=np.int16)
+    ki = 0
     print('Conducting K-fold cross-validation :\n')
-    for train_index, test_index in tqdm(kf.split(ST), desc='cross-validation '):
+    for train_index, test_index in tqdm(kf.split(ST), desc=f'cross-validation fold-{ki}'):
+        accuracies[ki], conf_matrices[ki] = do_kfold((train_index, test_index), ST)
+        ki += 1
+
         # Split data into training and testing sets
-        train_ST = ST[train_index]
-        test_ST =  ST[test_index]
-        test_ST_o, test_ST_q = np.moveaxis(test_ST,-1,0)
+        # train_ST = ST[train_index]
+        # test_ST =  ST[test_index]
+        # test_ST_o, test_ST_q = np.moveaxis(test_ST,-1,0)
+
+        # HMM_k = POSTagger(words=words, pos_tags=pos_tags, this_ST=train_ST)
     
-        # Testing
-        pred = HMM_POSTagger.batch_tag(test_ST_o)
+        # # Testing
+        # pred = HMM_POSTagger.batch_tag(test_ST_o)
         
-        assert ((pred == -1) == (test_ST_q == -1)).all()
-        conf_matx = confusion_matrix(pred[pred!=-1].ravel(),test_ST_q[test_ST_q!=-1].ravel())
+        # assert ((pred == -1) == (test_ST_q == -1)).all()
+        # conf_matx = confusion_matrix(pred[pred!=-1].ravel(),test_ST_q[test_ST_q!=-1].ravel())
         
-        # Per label accuracy which i think turns out same as precision
-        prec_s = conf_matx.sum(axis=0)
-        prec_s[prec_s==0] = 1 # handling division by zero
-        precis = conf_matx.diagonal() / prec_s
+        # # Per label accuracy which i think turns out same as precision
+        # prec_s = conf_matx.sum(axis=0)
+        # prec_s[prec_s==0] = 1 # handling division by zero
+        # precis = conf_matx.diagonal() / prec_s
         
-        accuracies.append(precis)
-        conf_matrices.append(conf_matx)
+        # accuracies[ki] = precis
+        # conf_matrices[ki] = conf_matx
+        # ki += 1
+
+    # with Pool(5) as p:
+        # results = p.starmap(do_kfold, zip(kf.split(ST),[ST]*k))
     
+    # p = Process(target=do_kfold, args=(next(kf.split(ST)), ST))
+    # results = p.run()
+    # print(results)
+    
+    # accuracies = [r[0] for r in results]
+    # conf_matrices = [r[1] for r in results]
+
     per_tag_acc = np.array(accuracies).mean(axis=0)
     per_tag_acc = np.asarray(list(zip(pos_tags, per_tag_acc)))
     with np.printoptions(precision=4,suppress=True):
@@ -191,6 +246,7 @@ if __name__ == '__main__':
     print('\nObservation sequence and Optimal state sequence:\n', hmm_tagged_sent)
     
     from nltk.tag import pos_tag
+    import pandas as pd
     rec_t = pos_tag(test_sent, tagset='universal')
     rec_t = [p[1] for p in rec_t]
     vi = pd.DataFrame(zip(test_sent, hmm_tags, rec_t, ['']*len(rec_t)), columns=['Tokens','Predicted POS tag','NLTK lib tagged','Mismatch'])
