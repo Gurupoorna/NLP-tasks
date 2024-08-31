@@ -135,7 +135,7 @@ def do_kfold(kf_idx , k, words, pos_tags, ST:np.ndarray):
             y_true, y_pred, 
             beta=1, 
             labels=range(no_pos_tags)
-            )
+        )
         # Per label accuracy which i think turns out same as precision
         # prec_s = conf_matx.sum(axis=0)
         # prec_s[prec_s==0] = 1 # handling division by zero
