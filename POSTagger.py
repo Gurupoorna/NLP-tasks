@@ -1,14 +1,13 @@
 from nltk.tokenize import word_tokenize
 import numpy as np
 from numba import njit, prange
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from viterbi import viterbi_log
 from tqdm import tqdm
 import logging
 
-logging.basicConfig(level=logging.INFO, format='\n%(asctime)s [%(levelname)s] %(name)s - %(message)s')
 
 class POSTagger():
+    logging.basicConfig(level=logging.INFO, format='\n%(asctime)s [%(levelname)s] %(name)s - %(message)s')
     def __init__(self, tagged_sentences=None, words=None, pos_tags=None, this_ST=None, A=None, B=None, Pi=None):
         self._logger = logging.getLogger('POSTagger')
         self._logger.info('Initializing Hidden Markov Model.')
