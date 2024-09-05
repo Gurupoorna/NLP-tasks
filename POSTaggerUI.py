@@ -29,7 +29,10 @@ class POSTaggingApp:
         self.exit_button.pack(pady=10)
 
         # Initialize the HMM tagger using the function from main.py
-        self.hmm_tagger, self.words = initialize_hmm_tagger()
+        from numpy import load
+        load_p = load('hmm_probs.npz')
+        A=load_p['A']; B=load_p['B']; Pi=load_p['Pi']
+        self.hmm_tagger, self.words, self.pos_tags = initialize_hmm_tagger(A=A, B=B, Pi=Pi)
 
     def display_pos_tags(self):
         # Get the sentence input from the text input box

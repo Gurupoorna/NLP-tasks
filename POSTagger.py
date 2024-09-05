@@ -12,9 +12,9 @@ class POSTagger():
         self._logger = logging.getLogger('POSTagger')
         self._logger.info('Initializing Hidden Markov Model.')
 
-        if not words:
-            words = list(set([wt[0] for s in tqdm(tagged_sentences, desc='Getting all words') for wt in s]))
-        if not pos_tags:
+        if words is None:
+            words = sorted(list(set([wt[0] for s in tqdm(tagged_sentences, desc='Getting all words') for wt in s])))
+        if pos_tags is None:
             pos_tags = list(set([wt[1] for s in tagged_sentences for wt in s]))
 
         self.words = words
@@ -28,14 +28,18 @@ class POSTagger():
             self._ST = this_ST
             self._logger.info('Calculating probability matrices...')
             self._transProb, self._emissProb, self._iniProb = self._get_prob(self.words, self.pos_tags, self._ST)
-        elif not A or not B or not Pi:
-            self._to_numpy(tagged_sentences)
-            self._logger.info('Calculating probability matrices...')
-            self._transProb, self._emissProb, self._iniProb = self._get_prob(self.words, self.pos_tags, self._ST)
-        else:
+        elif isinstance(A, np.ndarray) and isinstance(B, np.ndarray) and isinstance(Pi, np.ndarray):
             self._transProb = A
             self._emissProb = B
             self._iniProb = Pi
+            self._logger.info('Assigning pre-computed probability matrices.')
+        else:
+            self._to_numpy(tagged_sentences)
+            self._logger.info('Calculating probability matrices...')
+            self._transProb, self._emissProb, self._iniProb = self._get_prob(self.words, self.pos_tags, self._ST)
+    
+    def save_prob_np(self, name):
+        np.savez_compressed(name, A=self._transProb, B=self._emissProb, Pi=self._iniProb)
 
     def tag(self, toks):
         # Tokenize if the input is a string

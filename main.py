@@ -9,14 +9,28 @@ from nltk.tokenize import word_tokenize
 from POSTagger import POSTagger
 
 # Function to initialize the HMM tagger
-def initialize_hmm_tagger():
-    words = list(set(brown.words()))
+def initialize_hmm_tagger(A=None, B=None, Pi=None):
+    words = sorted(list(set(brown.words())))
     pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', 'PRT', '.', 'X']
-    tagged_sents = list(brown.tagged_sents(tagset='universal'))
 
     # Initialize the POSTagger (HMM)
-    hmm_tagger = POSTagger(tagged_sents, words, pos_tags)
+    if A is None and B is None and Pi is None :
+        tagged_sents = list(brown.tagged_sents(tagset='universal'))
+        hmm_tagger = POSTagger(tagged_sents, words, pos_tags)
+    else :
+        hmm_tagger = POSTagger(words=words, pos_tags=pos_tags, A=A, B=B, Pi=Pi)
     return hmm_tagger, words, pos_tags
+
+# Function to perform POS tagging on a given sentence
+def pos_tag_sentence(hmm_tagger, sentence, words):
+    # Tokenize the sentence
+    test_sent = word_tokenize(sentence)
+
+    # Get the HMM-tagged sentence
+    hmm_tagged_sent = hmm_tagger.tag(test_sent)
+
+    # Return the tagged sentence
+    return hmm_tagged_sent
 
 # Function for performing K-fold cross-validation
 def perform_k_fold_validation(hmm_tagger, words, pos_tags):
@@ -71,6 +85,7 @@ def perform_k_fold_validation(hmm_tagger, words, pos_tags):
 if __name__ == '__main__' :
     import sys
     hmm_tagger, words, pos_tags = initialize_hmm_tagger()
+    hmm_tagger.save_prob_np('hmm_probs')
     if len(sys.argv) >= 2 :
         s = sys.argv[1]
         test_sent = word_tokenize(s)
