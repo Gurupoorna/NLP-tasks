@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from main import initialize_hmm_tagger, pos_tag_sentence
+from HMM import initialize_hmm_tagger, pos_tag_sentence
 
 class POSTaggingApp:
     def __init__(self, root):
