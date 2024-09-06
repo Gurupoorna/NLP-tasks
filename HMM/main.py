@@ -25,6 +25,8 @@ if __name__ == '__main__' :
     print('Total Accuracy :', results['total_accuracy'])
     print('Total Recall : ', results['total_recall'])
     print('Total F-score :', results['total_fscore'])
+    results = dict()
+    imp_results = results['']
     results['seed'] = seed
     with open('hmm_results.pkl', 'wb') as p:
         pickle.dump(results, p)
