@@ -223,6 +223,7 @@ def perform_validations(hmm_tagger, words, pos_tags, k=2, betas=[1,0.5,2], rando
         'per_tag_acc': per_tag_acc,
         'per_tag_recl': per_tag_recl,
         'per_tag_fscore': per_tag_fscore,
+        'per_tag_fbetascores': per_tag_fbetascores,
         'metrics': metrics,
         'c_matrices': c_matrices,
         'total_accuracy': total_accuracy,

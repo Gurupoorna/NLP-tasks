@@ -25,10 +25,20 @@ if __name__ == '__main__' :
     print('Total Accuracy :', results['total_accuracy'])
     print('Total Recall : ', results['total_recall'])
     print('Total F-score :', results['total_fscore'])
-    results = dict()
-    imp_results = results['']
+    imp_results = {
+        'seed': seed,
+        'total_accuracy': results['total_accuracy'],
+        'total_recall': results['total_recall'],
+        'total_fscore': results['total_fscore'],
+        'per_tag_acc': results['per_tag_acc'].tolist(),
+        'per_tag_recl': results['per_tag_recl'].tolist(),
+        'per_tag_fscore': results['per_tag_fscore'].tolist(),
+        'per_tag_fbetascores': results['per_tag_fbetascores'].tolist(),
+    }
     results['seed'] = seed
     with open('hmm_results.pkl', 'wb') as p:
         pickle.dump(results, p)
     with open('scores.txt','a') as f:
-        f.write(json.dumps(results))
+        f.write(json.dumps(imp_results, indent=4))
+        f.write('\n\n')
+        
