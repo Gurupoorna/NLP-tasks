@@ -16,7 +16,9 @@ class POSTagger():
         if words is None:
             words = sorted(list(set([wt[0] for s in tqdm(tagged_sentences, desc='Getting all words') for wt in s])))
         if pos_tags is None:
-            pos_tags = list(set([wt[1] for s in tagged_sentences for wt in s]))
+            pos_tags = list(set([wt[1] for s in tqdm(tagged_sentences, desc='Getting all tags') for wt in s]))
+            pos_tags.remove('X')
+            pos_tags.append('X')
 
         self.words = words
         self.pos_tags = pos_tags
