@@ -11,7 +11,7 @@ if __name__ == '__main__' :
     import sys
     import os
     import pickle
-    seed=425
+    seed=571
     hmm_tagger, words, pos_tags = initialize_hmm_tagger()
     if not os.path.exists('hmm_probs.npz'):
         hmm_tagger.save_prob_np('hmm_probs')

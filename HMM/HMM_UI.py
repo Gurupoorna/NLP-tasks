@@ -9,6 +9,7 @@ from HMM import initialize_hmm_tagger
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import font as tkfont
+from numpy import load
 
 TAG_COLORS = {
     'NOUN': 'blue',
@@ -49,15 +50,15 @@ def tag_sentence():
                 result_text.insert(tk.END, f"{word}: Predicted: {pred_tag}, Correct: {corr_tag}\n", 'mismatch')
         else:
             result_text.insert(tk.END, "\nNo Mismatches Found.\n", 'heading')
-
-hmm_tagger, words, pos_tags = initialize_hmm_tagger()
+vals = load('hmm_probs.npz')
+hmm_tagger, words, pos_tags = initialize_hmm_tagger(A=vals['A'], B=vals['B'], Pi=vals['Pi'])
 
 root = tk.Tk()
 root.title("HMM POS Tagger")
 
-heading_font = tkfont.Font(family="Helvetica", size=12, weight="bold")
-body_font = tkfont.Font(family="Arial", size=10)
-button_font = tkfont.Font(family="Helvetica", size=10, weight="bold")
+heading_font = tkfont.Font(family="Helvetica", size=22, weight="bold")
+body_font = tkfont.Font(family="Arial", size=20)
+button_font = tkfont.Font(family="Helvetica", size=18, weight="bold")
 
 input_label = tk.Label(root, text="Enter Sentence:", font=heading_font)
 input_label.pack(pady=(10, 0))
