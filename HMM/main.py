@@ -6,11 +6,11 @@ nltk.download('punkt_tab', quiet=True)
 
 from nltk.tokenize import word_tokenize
 from HMM import initialize_hmm_tagger, perform_validations
-
+import sys
+import os
+import pickle
+import json
 if __name__ == '__main__' :
-    import sys
-    import os
-    import pickle
     seed=571
     hmm_tagger, words, pos_tags = initialize_hmm_tagger()
     if not os.path.exists('hmm_probs.npz'):
@@ -25,7 +25,8 @@ if __name__ == '__main__' :
     print('Total Accuracy :', results['total_accuracy'])
     print('Total Recall : ', results['total_recall'])
     print('Total F-score :', results['total_fscore'])
+    results['seed'] = seed
     with open('hmm_results.pkl', 'wb') as p:
         pickle.dump(results, p)
     with open('scores.txt','a') as f:
-        f.write(f"{seed}, {results['total_accuracy']}, {results['total_recall']}, {results['total_fscore']}\n")
+        f.write(json.dumps(results))
