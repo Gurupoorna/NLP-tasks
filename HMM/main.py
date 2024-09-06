@@ -38,7 +38,7 @@ if __name__ == '__main__' :
     results['seed'] = seed
     with open('hmm_results.pkl', 'wb') as p:
         pickle.dump(results, p)
-    with open('scores.txt','a') as f:
+    with open('scores.txt','a+') as f:
         f.write(json.dumps(imp_results, indent=4))
         f.write('\n\n')
         

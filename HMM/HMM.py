@@ -87,7 +87,7 @@ class POSTagger():
 
     @staticmethod
     @njit(parallel=True)
-    def _get_prob(words, pos_tags, _ST, eps=0.00001):
+    def _get_prob(words, pos_tags, _ST, eps=np.finfo(float).tiny):
         no_words = len(words)
         no_tags = len(pos_tags)
         A = np.zeros((no_tags, no_tags), dtype=np.float64)
@@ -132,7 +132,8 @@ class POSTagger():
 # Function to initialize the HMM tagger
 def initialize_hmm_tagger(A=None, B=None, Pi=None):
     words = sorted(list(set(brown.words())))
-    pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', 'PRT', '.', 'X']
+    # pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', 'PRT', '.', 'X']
+    pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', '.', 'PRT', 'X']
 
     # Initialize the POSTagger (HMM)
     if A is None and B is None and Pi is None :
