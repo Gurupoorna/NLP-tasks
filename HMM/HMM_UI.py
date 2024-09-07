@@ -50,7 +50,7 @@ def tag_sentence():
                 result_text.insert(tk.END, f"{word}: Predicted: {pred_tag}, Correct: {corr_tag}\n", 'mismatch')
         else:
             result_text.insert(tk.END, "\nNo Mismatches Found.\n", 'heading')
-vals = load('hmm_probs0.npz')
+vals = load('hmm_probs.npz')
 hmm_tagger, words, pos_tags = initialize_hmm_tagger(A=vals['A'], B=vals['B'], Pi=vals['Pi'])
 
 root = tk.Tk()
