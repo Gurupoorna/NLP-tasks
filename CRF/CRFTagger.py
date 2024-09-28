@@ -15,10 +15,13 @@ class CRFTagger():
     def __init__(self, name, from_saved=False):# train_sents=None, test_sents=None):
         self.name = name
         if from_saved:
-            self.logger.info(f'Fetching saved {name}.crfsuite')
             self.tagger = pycrfsuite.Tagger()
-            self.tagger.open(f'{name}.crfsuite')
-            return 
+            self.logger.info(f'Fetching saved {name}.crfsuite')
+            try: 
+                self.tagger.open(f'{name}.crfsuite')
+                return 
+            except:
+                self.logger.warning(f'Failed to open {name}.crfsuite . Retraining the model...')
         self.sent_dataset = __class__.sent_dataset
         X_train = [self.sent2features(s) for s in self.sent_dataset]
         y_train = [self.sent2postags(s) for s in self.sent_dataset]
@@ -30,8 +33,8 @@ class CRFTagger():
 
         self.trainer.set_params({
             'c1': 1.0,   # coefficient for L1 penalty
-            'c2': 1e-3,  # coefficient for L2 penalty
-            'max_iterations': 50,  # stop earlier
+            'c2': 3e-3,  # coefficient for L2 penalty
+            'max_iterations': 150,  # stop earlier
             'feature.possible_transitions': True # include transitions that are possible, but not observed
         })
         self.logger.info('Start CRF training')
@@ -40,8 +43,10 @@ class CRFTagger():
         self.tagger = pycrfsuite.Tagger()
         self.tagger.open(f'{name}.crfsuite')
         
-    def tag(self, sent:str, tup=False):
-        tokens = word_tokenize(sent)
+    def tag(self, sent:str|list, tup=False):
+        if type(sent) == str:
+            tokens = word_tokenize(sent)
+        else: tokens = sent
         pred_tags = self.tagger.tag(self.sent2features([[tok] for tok in tokens]))
         if tup:
             return list(zip(tokens,pred_tags))
@@ -50,7 +55,7 @@ class CRFTagger():
     @classmethod
     def test_tagger(cls, name, train_sents=None, test_sents=None):
         if train_sents is None and test_sents is None : 
-            train_sents, test_sents = train_test_split(__class__.sent_dataset, test_size=0.3, shuffle=True, random_state=100)
+            train_sents, test_sents = train_test_split(cls.sent_dataset, test_size=0.3, shuffle=True, random_state=100)
         X_train = [cls.sent2features(s) for s in train_sents]
         y_train = [cls.sent2postags(s) for s in train_sents]
         X_test = [cls.sent2features(s) for s in test_sents]
@@ -66,10 +71,10 @@ class CRFTagger():
             'feature.possible_transitions': True # include transitions that are possible, but not observed
         })
         cls.logger.info('Test crf training')
-        trainer.train(f'{name}_test_set.crfsuite')
+        trainer.train(f'{name}_testing.crfsuite')
         
         tagger = pycrfsuite.Tagger()
-        tagger.open(f'{name}_test_set.crfsuite')
+        tagger.open(f'{name}_testing.crfsuite')
         y_pred = [tagger.tag(xseq) for xseq in X_test]
         cls.logger.info('Returning results')
         return cls.get_classification_report(y_test, y_pred)

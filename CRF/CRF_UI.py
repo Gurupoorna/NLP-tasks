@@ -27,7 +27,7 @@ def tag_sentence():
         predicted_tags = crf_tagger.tag(sentence)
         correct_tags = nltk.pos_tag(word_tokenize(sentence), tagset='universal')
         result_text.delete("1.0", tk.END)
-        result_text.insert(tk.END, "Word -> Predicted POS Tag -> Correct POS Tag\n", 'heading')
+        result_text.insert(tk.END, "Word -> Predicted POS Tag -> nltk POS Tag\n", 'heading')
 
         mismatches = []
         for (pred_tag, (word, corr_tag)) in zip(predicted_tags, correct_tags):
