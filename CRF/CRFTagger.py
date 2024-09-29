@@ -12,16 +12,20 @@ class CRFTagger():
     sent_dataset = brown.tagged_sents(tagset='universal')
     logging.basicConfig(level=logging.INFO, format='\n%(asctime)s [%(levelname)s] %(name)s - %(message)s')
     logger = logging.getLogger('CRFTagger')
-    def __init__(self, name, from_saved=False):# train_sents=None, test_sents=None):
+    def __init__(self, name, from_saved=False, path=None):# train_sents=None, test_sents=None):
         self.name = name
         if from_saved:
             self.tagger = pycrfsuite.Tagger()
-            self.logger.info(f'Fetching saved {name}.crfsuite')
-            try: 
-                self.tagger.open(f'{name}.crfsuite')
-                return 
-            except:
-                self.logger.warning(f'Failed to open {name}.crfsuite . Retraining the model...')
+            self.logger.info(f'Fetching saved {name}.crfsuite at {path}')
+            if path: 
+                self.tagger.open(path)
+                return
+            else:
+                try:
+                    self.tagger.open(f'{name}.crfsuite')
+                    return 
+                except:
+                    self.logger.warning(f'Failed to open {name}.crfsuite . Retraining the model...')
         self.sent_dataset = __class__.sent_dataset
         X_train = [self.sent2features(s) for s in self.sent_dataset]
         y_train = [self.sent2postags(s) for s in self.sent_dataset]
@@ -138,10 +142,12 @@ class CRFTagger():
     
 
 # Function to initialize the CRF tagger
-def initialize_crf_tagger(name):
+def initialize_crf_tagger(name, path=None):
     import os
     if os.path.exists(name+'.crfsuite') :
         crf_tagger = CRFTagger(name, from_saved=True)
+    elif path is not None and os.path.exists(path):
+        crf_tagger = CRFTagger(name, from_saved=True, path=path)
     else :
         # Initialize the CRFTagger
         crf_tagger = CRFTagger(name)

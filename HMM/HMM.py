@@ -2,7 +2,10 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import brown
 import numpy as np
 from numba import njit, prange
-from viterbi import viterbi_log
+try :
+    from .viterbi import viterbi_log
+except :
+    from viterbi import viterbi_log
 from tqdm import tqdm
 import logging    
 
@@ -132,8 +135,8 @@ class POSTagger():
 # Function to initialize the HMM tagger
 def initialize_hmm_tagger(A=None, B=None, Pi=None):
     words = sorted(list(set(brown.words())))
-    # pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', 'PRT', '.', 'X']
-    pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', '.', 'PRT', 'X']
+    pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', 'PRT', '.', 'X']
+    # pos_tags = ['VERB', 'NOUN', 'PRON', 'ADJ', 'ADV', 'ADP', 'CONJ', 'DET', 'NUM', '.', 'PRT', 'X']
 
     # Initialize the POSTagger (HMM)
     if A is None and B is None and Pi is None :
