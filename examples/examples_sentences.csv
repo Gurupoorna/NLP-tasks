@@ -1,0 +1,54 @@
+Tokens         |HMM       | CRF     |nltk
+Buffaloe       |   X      |  NOUN   |  NOUN 
+'s             |   X      |  NOUN   |  PRT  
+buffaloes      |   NOUN   |  NOUN   |  NOUN 
+,              |   .      |  .      |  .    
+which          |   DET    |  DET    |  DET  
+Buffaloe       |   X      |  NOUN   |  NOUN 
+buffaloes      |   NOUN   |  NOUN   |  VERB 
+always         |   ADV    |  ADV    |  ADV  
+buffalo        |   NOUN   |  ADJ    |  VERB 
+,              |   .      |  .      |  .    
+are            |   VERB   |  VERB   |  VERB 
+buffaloing     |   PRT    |  VERB   |  VERB 
+other          |   ADJ    |  ADJ    |  ADJ  
+Buffaloe       |   X      |  NOUN   |  NOUN 
+buffaloes      |   NOUN   |  NOUN   |  VERB 
+10             |   NUM    |  NUM    |  NUM  
+times          |   NOUN   |  NOUN   |  NOUN 
+.              |   .      |  .      |  .    
+
+I              |   PRON   |  PRON   |  PRON 
+book           |   NOUN   |  VERB   |  NOUN 
+tickets        |   NOUN   |  NOUN   |  NOUN 
+.              |   .      |  .      |  .    
+
+Where          |   ADV    |  ADV    |  ADV  
+are            |   VERB   |  VERB   |  VERB 
+you            |   PRON   |  PRON   |  PRON 
+going          |   VERB   |  VERB   |  VERB 
+?              |   .      |  .      |  .    
+
+Will           |   NOUN   |  VERB   |  NOUN 
+,              |   .      |  .      |  .    
+will           |   VERB   |  VERB   |  VERB 
+Will           |   VERB   |  VERB   |  NOUN 
+will           |   VERB   |  VERB   |  VERB 
+Will           |   VERB   |  VERB   |  NOUN 
+Will           |   VERB   |  VERB   |  NOUN 
+'s             |   PRT    |  NOUN   |  PRT  
+will           |   VERB   |  VERB   |  VERB 
+?              |   .      |  .      |  .    
+
+Time           |   NOUN   |  NOUN   |  NOUN 
+flies          |   NOUN   |  VERB   |  NOUN 
+like           |   ADP    |  ADP    |  ADP  
+an             |   DET    |  DET    |  DET  
+arrow          |   NOUN   |  NOUN   |  NOUN 
+;              |   .      |  .      |  .    
+fruit          |   NOUN   |  NOUN   |  CONJ 
+flies          |   NOUN   |  NOUN   |  NOUN 
+like           |   ADP    |  ADP    |  ADP  
+a              |   DET    |  DET    |  DET  
+banana         |   NOUN   |  NOUN   |  NOUN 
+.              |   .      |  .      |  .    
