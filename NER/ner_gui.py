@@ -5,7 +5,7 @@ from NER import feats2vects, sent2features, svmclassifier, my_token_preps
 
 def mock_predict(x):
     # Mock prediction; replace with `svmclassifier.predict(x)` in actual use.
-    return [1 if token.istitle()*1+(pos in ['NNP'])*2>1 else 0 for token, pos in x]
+    return [1 if (token.istitle() and (pos in ['NN', 'NNP'])) or (pos in ['NNP']) else 0 for token, pos in x]
 
 # Function to perform NER on input sentence
 def predict_ner():
